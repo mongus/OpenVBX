@@ -24,7 +24,7 @@ switch ($dialer->state) {
 				if ($to_dial instanceof VBX_User || $to_dial instanceof VBX_Device) {
 					$dialed = $dialer->dial($to_dial) || $dialed;
 				}
-			} while((!$dialed || $dial_list instanceof DialListUser) && ($to_dial instanceof VBX_User || $to_dial instanceof VBX_Device));
+			} while((!$dialed || $dial_list instanceof DialListUser || $dialer->simulring) && ($to_dial instanceof VBX_User || $to_dial instanceof VBX_Device));
 
 			if ($dialed) {
 				$dialer->state = $dial_list->get_state();
@@ -72,7 +72,7 @@ switch ($dialer->state) {
 					$dialer->state = $dial_list->get_state();
 				}
 			}
-		} while((!$dialed || $dial_list instanceof DialListUser) && ($to_dial instanceof VBX_User || $to_dial instanceof VBX_Device));
+		} while((!$dialed || $dial_list instanceof DialListUser || $dialer->simulring) && ($to_dial instanceof VBX_User || $to_dial instanceof VBX_Device));
 		
 		if (!$dialed) {
 			// no users left see what next action is, or go to voicemail

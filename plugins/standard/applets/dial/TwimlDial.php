@@ -41,6 +41,10 @@ class TwimlDial {
 		$this->no_answer_group_voicemail = AppletInstance::getAudioSpeechPickerValue('no-answer-group-voicemail');
 		$this->no_answer_redirect = AppletInstance::getDropZoneUrl('no-answer-redirect');
 		$this->no_answer_redirect_number = AppletInstance::getDropZoneUrl('no-answer-redirect-number');
+
+		$this->whisper = AppletInstance::getValue('whisper', '1');
+		$this->simulring = AppletInstance::getValue('simulring', '0');
+		$this->timeout = AppletInstance::getValue('timeout', '30');
 	}
 	
 // Actions
@@ -60,6 +64,28 @@ class TwimlDial {
 		
 		return $dialed;
 	}
+
+	protected function createDial($number = NULL, $append_to_response = true) {
+		if (empty($this->dial)) {
+			$this->dial = new Dial($number, array(
+					'action' => current_url(),
+					'callerId' => $this->callerId,
+					'timeout' => $this->timeout
+				));
+		}
+
+		if ($append_to_response)
+			$this->appendDial();
+
+		return $this->dial;
+	}
+
+	protected function appendDial() {
+		if (!empty($this->dial) && empty($this->dial_appended)) {
+			$this->response->append($this->dial);
+			$this->dial_appended = true;
+		}
+	}
 	
 	/**
 	 * Add a device to the Dialer
@@ -72,23 +98,20 @@ class TwimlDial {
 		
 		if ($device->is_active) {
 			$user = VBX_User::get($device->user_id);
-			$call_opts = array(
-							'url' => site_url('twiml/whisper?name='.urlencode($user->first_name)),
-						);
-				
-			$dial = new Dial(NULL, array(
-					'action' => current_url(),
-					'callerId' => $this->callerId
-				));
+			$call_opts = array();
 
+			if ($this->whisper)
+				$call_opts['url'] = site_url('twiml/whisper?name='.urlencode($user->first_name));
+
+			$this->createDial();
+				
 			if (strpos($device->value, 'client:') !== false) {
-				$dial->addClient(str_replace('client:', '', $device->value), $call_opts);
+				$this->dial->addClient(str_replace('client:', '', $device->value), $call_opts);
 			}
 			else {
-				$dial->addNumber($device->value, $call_opts);
+				$this->dial->addNumber($device->value, $call_opts);
 			}
 			
-			$this->response->append($dial);
 			$dialed = true;
 		}
 		return $dialed;
@@ -105,31 +128,28 @@ class TwimlDial {
 		// get users devices and add all active devices to do simultaneous dialing
 		$dialed = false;
 		if (count($user->devices)) {
-			$dial = new Dial(NULL, array(
-					'action' => current_url(), 
-					'callerId' => $this->callerId
-				));
+			$this->createDial(NULL, false);
 
-			$call_opts = array(
-							'url' => site_url('twiml/whisper?name='.urlencode($user->first_name)),
-						);
+			$call_opts = array();
+
+			if ($this->whisper)
+				$call_opts['url'] = site_url('twiml/whisper?name='.urlencode($user->first_name));
 						
 			foreach ($user->devices as $device) {
 				if ($device->is_active) {
 					if (strpos($device->value, 'client:') !== false) {
-						$dial->addClient(str_replace('client:', '', $device->value), $call_opts);
+						$this->dial->addClient(str_replace('client:', '', $device->value), $call_opts);
 					}
 					else {
-						$dial->addNumber($device->value, $call_opts);
+						$this->dial->addNumber($device->value, $call_opts);
 					}
 					$dialed = true;
-					break;
 				}
 			}
 		}
 
 		if ($dialed) {
-			$this->response->append($dial);
+			$this->appendDial();
 		}
 		return $dialed;
 	}
@@ -141,8 +161,8 @@ class TwimlDial {
 	 * @return bool
 	 */
 	public function dialNumber($number) {
-		$dialed = false;
-		$this->response->addDial($number);
+		$this->createDial($number);
+
 		return true;
 	}
 	

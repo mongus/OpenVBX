@@ -26,6 +26,9 @@
 
 	$dial_whom_selector = AppletInstance::getValue('dial-whom-selector', 'user-or-group');
 	$no_answer_action = AppletInstance::getValue('no-answer-action', 'voicemail');
+	$simulring = AppletInstance::getValue('simulring', 'false');
+	$whisper = AppletInstance::getValue('whisper', 'true');
+	$timeout = AppletInstance::getValue('timeout', '30');
 
 ?>
 <div class="vbx-applet dial-applet">
@@ -40,6 +43,12 @@
 				<td class="content-cell">
 					<h4>Dial a user or group</h4>
 					<?php echo AppletUI::UserGroupPicker('dial-whom-user-or-group'); ?>
+					<fieldset class="vbx-input-container" style="clear:left;padding-top:0.5em;">
+						<select id="simulring" name="simulring" class="medium">
+							<option value="0" <?php echo !$simulring ? 'selected="selected"' : ''; ?>>Dial one user at a time</option>
+							<option value="1" <?php echo $simulring ? 'selected="selected"' : ''; ?>>Dial group simultaneously</option>
+						</select>
+					</fieldset>
 				</td>
 			</tr>
 			<tr class="radio-table-row last <?php echo ($dial_whom_selector === 'number') ? 'on' : 'off' ?>">
@@ -54,6 +63,29 @@
 				</td>
 			</tr>
 		</table>
+	</div>
+
+	<br />
+	<h2>Timeout</h2>
+	<div class="vbx-full-pane">
+		<fieldset class="vbx-input-container">
+			<h4>Wait for
+			<select class="tiny" name="timeout" style="display: inline-block;"><?php for ($i = 5; $i <= 60; $i++) { ?>
+				<option value="<?php echo $i; ?>" <?php echo $timeout == $i ? 'selected="selected"' : ''; ?>><?php echo $i; ?></option><?php } ?>
+			</select>
+			seconds before continuing</h4>
+		</fieldset>
+	</div>
+
+	<br />
+	<h2>Prompt</h2>
+	<div class="vbx-full-pane">
+		<fieldset class="vbx-input-container">
+			<select class="medium" name="whisper">
+				<option value="1" <?php echo $whisper ? 'selected="selected"' : ''; ?>>Prompt before connecting</option>
+				<option value="0" <?php echo !$whisper ? 'selected="selected"' : ''; ?>>Connect immediately upon answer</option>
+			</select>
+		</fieldset>
 	</div>
 
 	<br />
