@@ -66,14 +66,15 @@
 	</div>
 
 	<br />
-	<h2>Timeout</h2>
+	<h2>Caller ID</h2>
 	<div class="vbx-full-pane">
 		<fieldset class="vbx-input-container">
-			<h4>Wait for
-			<select class="tiny" name="timeout" style="display: inline-block;"><?php for ($i = 5; $i <= 60; $i++) { ?>
-				<option value="<?php echo $i; ?>" <?php echo $timeout == $i ? 'selected="selected"' : ''; ?>><?php echo $i; ?></option><?php } ?>
+			<select class="medium" name="callerId">
+				<option value="">Caller's Number</option>
+<?php if(count($numbers)) foreach($numbers as $number): $number->phone = normalize_phone_to_E164($number->phone); ?>
+				<option value="<?php echo $number->phone; ?>"<?php echo $number->phone == $callerId ? ' selected="selected" ' : ''; ?>><?php echo $number->name; ?></option>
+<?php endforeach; ?>
 			</select>
-			seconds before continuing</h4>
 		</fieldset>
 	</div>
 
@@ -89,15 +90,14 @@
 	</div>
 
 	<br />
-	<h2>Caller ID</h2>
+	<h2>Timeout</h2>
 	<div class="vbx-full-pane">
 		<fieldset class="vbx-input-container">
-			<select class="medium" name="callerId">
-				<option value="">Caller's Number</option>
-<?php if(count($numbers)) foreach($numbers as $number): $number->phone = normalize_phone_to_E164($number->phone); ?>
-				<option value="<?php echo $number->phone; ?>"<?php echo $number->phone == $callerId ? ' selected="selected" ' : ''; ?>><?php echo $number->name; ?></option>
-<?php endforeach; ?>
+			<h4>Wait for
+			<select class="tiny" name="timeout" style="display: inline-block;"><?php for ($i = 5; $i <= 60; $i++) { ?>
+				<option value="<?php echo $i; ?>" <?php echo $timeout == $i ? 'selected="selected"' : ''; ?>><?php echo $i; ?></option><?php } ?>
 			</select>
+			seconds before continuing</h4>
 		</fieldset>
 	</div>
 
