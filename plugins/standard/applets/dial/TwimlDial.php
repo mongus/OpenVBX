@@ -1,5 +1,7 @@
 <?php
 
+require_once(APPPATH.'libraries/flow_preview.php');
+
 class TwimlDial {
 	/**
 	 * For testing only. Some proxies and firewalls 
@@ -30,6 +32,17 @@ class TwimlDial {
 		$this->callerId = AppletInstance::getValue('callerId', null);
 		if (empty($this->callerId)) {
 			$this->callerId = $_REQUEST['From'];
+
+			if (empty($this->callerId)) {
+				$CI =& get_instance();
+
+				$twilio = getTwilioRestClient();
+
+				$response = $twilio->request("Accounts/{$CI->twilio_sid}/IncomingPhoneNumbers.json", "GET");
+				$json = json_decode($response->ResponseText, true);
+
+				$this->callerId = $json['incoming_phone_numbers'][0]['phone_number'];
+			}
 		}
 
 		/* Get current instance	 */

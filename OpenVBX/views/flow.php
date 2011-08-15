@@ -21,6 +21,7 @@ if(isset($flow_data)) printf('<script type="text/javascript">var flow_data = %s;
 <div action="<?php echo site_url('flows/save'); ?>" method="post" class="vbx-form <?php echo $editor_type ?>">
 	<input type="hidden" name="flow-name" class="flow-name" value="<?php echo $flow->name?>" />
 	<input type="hidden" name="flow-id" class="flow-id" value="<?php echo $flow->id?>" />
+	<input type="hidden" name="flow-preview" class="flow-preview" value="" />
 	<div class="vbx-content-container">
 
 	<div class="yui-ge">
@@ -117,6 +118,36 @@ if(isset($flow_data)) printf('<script type="text/javascript">var flow_data = %s;
 		<div id="dialog-close" class="dialog hide" title="Flow Modified">
 			<p>Would you like to save your changes before closing the editor?</p>
 		</div>
+
+		<div id="dialog-twilio-client" class="dialog hide" title="Flow Preview">
+			<div style="text-align:center">
+				<table id="keypad"><?php foreach (array(array(1,2,3),array(4,5,6),array(7,8,9),array('*',0,'#')) as $row) {?>
+					<tr><?php foreach ($row as $cell) {?>
+						<td style="padding:2px;"><button class="submit-button" style="width:45px;font-size:150%;margin:0;"><span><?php echo $cell; ?></span></button></td><?php } ?>
+					</tr><?php } ?>
+				</table>
+			</div>
+		</div>
 </div>
 
 <?php include("user_group_dialogs.php"); ?>
+<?php
+require_once(APPPATH . 'libraries/Capability.php');
+require_once(APPPATH . 'libraries/flow_preview.php');
+ 
+//We're making a call using the restClient using the twilio credentials for this VBX instalation
+$this->twilio = new TwilioRestClient($this->twilio_sid,
+			$this->twilio_token,
+			$this->twilio_endpoint);
+
+
+$capability = new Services_Twilio_Capability($this->twilio_sid, $this->twilio_token);
+$appSid = getAppSid($this->twilio, $this->twilio_sid);
+$capability->allowClientOutgoing($appSid);
+$token = $capability->generateToken();
+
+?>
+<script type="text/javascript" src="http://static.twilio.com/libs/twiliojs/1.0/twilio.min.js"></script>
+<script type="text/javascript">
+	var twilioClientToken = '<?php echo $token; ?>';
+</script>

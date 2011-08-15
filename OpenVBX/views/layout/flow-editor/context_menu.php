@@ -26,6 +26,7 @@
 
 
 				<ul class="vbx-menu-items-right">
+					<li class="menu-item"><a class="preview-button link-button" href="" style="display:none;"><span>Preview</span></a></li>
 					<li class="menu-item"><a class="save-button link-button" href=""><span>Save</span></a></li>
 					<li class="menu-item"><a class="close-button link-button navigate-away" href="<?php echo site_url('flows') ?>"><span>Close</span></a></li>
 				</ul>
