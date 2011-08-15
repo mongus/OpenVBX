@@ -41,6 +41,10 @@ class TwimlDial {
 		$this->no_answer_group_voicemail = AppletInstance::getAudioSpeechPickerValue('no-answer-group-voicemail');
 		$this->no_answer_redirect = AppletInstance::getDropZoneUrl('no-answer-redirect');
 		$this->no_answer_redirect_number = AppletInstance::getDropZoneUrl('no-answer-redirect-number');
+
+		$this->whisper = AppletInstance::getValue('whisper', '1');
+		$this->simulring = AppletInstance::getValue('simulring', '0');
+		$this->timeout = AppletInstance::getValue('timeout', '30');
 	}
 	
 // Actions
@@ -65,7 +69,8 @@ class TwimlDial {
 		if (empty($this->dial)) {
 			$this->dial = new Dial($number, array(
 					'action' => current_url(),
-					'callerId' => $this->callerId
+					'callerId' => $this->callerId,
+					'timeout' => $this->timeout
 				));
 		}
 
@@ -93,12 +98,13 @@ class TwimlDial {
 		
 		if ($device->is_active) {
 			$user = VBX_User::get($device->user_id);
-			$call_opts = array(
-							'url' => site_url('twiml/whisper?name='.urlencode($user->first_name)),
-						);
-				
-			$this->createDial();
+			$call_opts = array();
 
+			if ($this->whisper)
+				$call_opts['url'] = site_url('twiml/whisper?name='.urlencode($user->first_name));
+
+			$this->createDial();
+				
 			if (strpos($device->value, 'client:') !== false) {
 				$this->dial->addClient(str_replace('client:', '', $device->value), $call_opts);
 			}
@@ -124,9 +130,10 @@ class TwimlDial {
 		if (count($user->devices)) {
 			$this->createDial(NULL, false);
 
-			$call_opts = array(
-							'url' => site_url('twiml/whisper?name='.urlencode($user->first_name)),
-						);
+			$call_opts = array();
+
+			if ($this->whisper)
+				$call_opts['url'] = site_url('twiml/whisper?name='.urlencode($user->first_name));
 						
 			foreach ($user->devices as $device) {
 				if ($device->is_active) {
