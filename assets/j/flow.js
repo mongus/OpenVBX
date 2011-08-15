@@ -224,8 +224,13 @@ Flows.events = {
 					var vbx_form = $('.vbx-form');
 					params = {
 						id : $('input.flow-id', vbx_form).val(),
-						name : $('input.flow-name', vbx_form).val()
+						name : $('input.flow-name', vbx_form).val(),
+						preview : $('input.flow-preview', vbx_form).val()
 					};
+
+					// Clear the preview flag
+					$('.vbx-form input.flow-preview', vbx_form).val('');
+
 					if($(vbx_form).hasClass('sms')) 
 					{
 						params.sms_data = JSON.stringify(flow_data);
@@ -246,8 +251,16 @@ Flows.events = {
 								if(success) {
 									success();
 								}
-								$(document).trigger('flow-after-save');
-								return $.notify('Flow has been saved.').flicker();
+
+								if (data.preview) {
+									window.previewFlowId = data.flow_id;
+									Twilio.Device.connect();
+									return;
+								}
+								else {
+									$(document).trigger('flow-after-save');
+									return $.notify('Flow has been saved.').flicker();
+								}
 							}
 							
 							$.notify(data.message);
@@ -701,6 +714,13 @@ Flows.initialize = function() {
 		event.preventDefault();
 		$(document).trigger('flow-before-save');
 	});
+	$('.preview-button').click(function(event) {
+		// Set the preview flag
+		$('.vbx-form input.flow-preview').val('true');
+		event.stopPropagation();
+		event.preventDefault();
+		$(document).trigger('flow-before-save');
+	});
 
 	$(window).bind('hashchange', Flows.events.flow.change);
 	Flows.id = $('#flow-meta .flow-id', document).attr('id').replace('flow-','');
@@ -720,5 +740,52 @@ Flows.initialize = function() {
 	
 $(document).ready(function() {
 	Flows.initialize();
+
+	Twilio.Device.setup(twilioClientToken);
+
+	Twilio.Device.ready(function(device) {
+		$('.preview-button').show();
+	});
+
+	Twilio.Device.error(function(error) {
+		$.notify(error.message);
+	});
+
+	var currentConnection;
+
+	Twilio.Device.connect(function(connection) {
+		currentConnection = connection;
+		$('#dialog-twilio-client').dialog({
+			width: "187px",
+			buttons: {
+				"Hang Up": function() {
+					currentConnection.disconnect();
+					//Twilio.Device.disconnectAll();
+				}
+			}
+		}).dialog('open');
+	});
+
+	Twilio.Device.disconnect(function(connection) {
+		currentConnection = null;
+		$('#dialog-twilio-client').dialog('close');
+		
+		// Delete the temporary preview flow
+		$.ajax({
+			url: OpenVBX.home + '/flows/edit/' + window.previewFlowId,
+			dataType : 'json',
+			type : 'DELETE'
+		});
+
+	});
+
+	$('#keypad button').click(function(event) {
+		event.stopPropagation();
+		event.preventDefault();
+		var c = $(this).text();
+		if (currentConnection) {
+			currentConnection.sendDigits(c);
+		}
+	});
 });
 

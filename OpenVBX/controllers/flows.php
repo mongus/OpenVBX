@@ -20,6 +20,7 @@
  **/
 
 require_once(APPPATH.'libraries/twilio.php');
+require_once(APPPATH.'libraries/flow_preview.php');
 
 class Flows extends User_Controller {
 
@@ -287,18 +288,35 @@ class Flows extends User_Controller {
 		$error = false;
 		$message = '';
 
+		$preview = $this->input->post('preview');
+
 		$flow = new VBX_Flow();
-		if($flow_id > 0)
-		{
-			$flow = VBX_Flow::get($flow_id);
-			if(empty($flow))
-			{
-				$error = true;
-				$message = 'Flow does not exist.';
+
+		if ($preview) {
+			$previewName = 'Flow Preview';
+
+			// Try to find an existing preview flow
+			$flow = VBX_Flow::get(array('name'=>$previewName, 'user_id'=>$this->user_id));
+
+			if (empty($flow)) {
+				$flow = new VBX_Flow();
+				$flow->user_id = $this->user_id;
+				$flow->name = $previewName;
 			}
 		}
+		else {
+			if($flow_id > 0)
+			{
+				$flow = VBX_Flow::get($flow_id);
+				if(empty($flow))
+				{
+					$error = true;
+					$message = 'Flow does not exist.';
+				}
+			}
 
-		$flow->name = trim($this->input->post('name'));
+			$flow->name = trim($this->input->post('name'));
+		}
 	
 		$voice_data = $this->input->post('data');
 		$sms_data = $this->input->post('sms_data');
@@ -330,11 +348,21 @@ class Flows extends User_Controller {
 		{
 			return redirect($flow_url);
 		}
-		
+
+		if ($preview) {
+			// Update the preview app at twilio to point to this flow
+			$twilio = new TwilioRestClient($this->twilio_sid,
+				$this->twilio_token,
+				$this->twilio_endpoint);
+
+			updateApp($twilio, $this->twilio_sid, $flow->id);
+		}
+			
 		$data['json'] = array('error' => $error,
 							  'message' => $message,
 							  'flow_id' => $flow->id,
-							  'flow_url' => $flow_url);
+							  'flow_url' => $flow_url,
+							  'preview' => $preview);
 		
 		$this->respond('Call Flows', 'flows', $data);
 	}
